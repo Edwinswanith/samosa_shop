@@ -68,6 +68,10 @@ export function calculateCylinderDays(startedOn?: string, ranOutOn?: string, tod
   return Math.floor((endDate.getTime() - startDate.getTime()) / 86_400_000) + 1;
 }
 
+export function calculateStaffSalary(dailyRate: string, fullDays: string, halfDays: string): string {
+  return money(new Decimal(dailyRate).times(new Decimal(fullDays).plus(new Decimal(halfDays).dividedBy(2))));
+}
+
 export function calculateLpgPaymentSnapshot(state: Pick<ShopState, "advancePayments" | "lpgRefills">) {
   const cylinderAdvance = state.advancePayments.find((advance) => advance.id === "advance-cylinder")?.paidAmount ?? "0";
   const paidRefills = state.lpgRefills.filter((event) => event.paymentStatus === "Paid").reduce((total, event) => total.plus(event.amount), new Decimal(0));

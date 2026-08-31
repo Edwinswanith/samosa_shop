@@ -33,6 +33,15 @@ test("customer settlement and LPG refill flows open with reconciled defaults", a
   await expect(page.getByLabel("Refill amount")).toHaveValue("2600.00");
 });
 
+test("paid staff salaries show their dated attendance basis", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "More", exact: true }).filter({ visible: true }).click();
+  await expect(page.getByText("Kousal")).toBeVisible();
+  await expect(page.getByText(/Master.*₹1,000.00 \/ day/)).toBeVisible();
+  await expect(page.getByText(/₹7,500.00 paid/)).toBeVisible();
+  await expect(page.getByText(/₹12,000.00 paid in latest period/)).toBeVisible();
+});
+
 test("vegetable rates save and can become the vendor primary rates", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Inventory", exact: true }).filter({ visible: true }).click();

@@ -1,6 +1,6 @@
 import { Decimal128, type Document } from "mongodb";
 import { primaryRatesFromOrder } from "@/domain/operations";
-import type { AdvancePayment, LpgCylinder, LpgPricing, LpgRefillEvent, RecurringRent, StaffMember, VendorItemRate, VegetableOrder } from "@/domain/types";
+import type { AdvancePayment, LpgCylinder, LpgPricing, LpgRefillEvent, RecurringRent, StaffMember, StaffPayment, VendorItemRate, VegetableOrder } from "@/domain/types";
 import { getDatabase } from "./mongodb";
 import { databaseCollections } from "./databaseSchema";
 
@@ -9,7 +9,7 @@ let operationIndexesPromise: Promise<void> | undefined;
 
 export function ensureOperationIndexes() {
   operationIndexesPromise ??= getDatabase().then(async (database) => {
-    await Promise.all(["vegetable_orders", "vendor_item_rates", "lpg_cylinders", "lpg_refill_events", "staff", "advance_payments", "recurring_rents", "settings"].map(async (name) => {
+    await Promise.all(["vegetable_orders", "vendor_item_rates", "lpg_cylinders", "lpg_refill_events", "staff", "staff_transactions", "advance_payments", "recurring_rents", "settings"].map(async (name) => {
       const definition = databaseCollections.find((candidate) => candidate.name === name);
       if (definition) await database.collection(name).createIndexes(definition.indexes);
     }));
@@ -66,7 +66,19 @@ function staffFromMongo(document: Document): StaffMember {
     ...data,
     monthlySalary: data.monthlySalary instanceof Decimal128 ? data.monthlySalary.toString() : String(data.monthlySalary),
     advanceBalance: data.advanceBalance instanceof Decimal128 ? data.advanceBalance.toString() : String(data.advanceBalance),
+    dailySalary: data.dailySalary instanceof Decimal128 ? data.dailySalary.toString() : data.dailySalary,
   } as StaffMember;
+}
+
+export function staffPaymentFromMongo(document: Document): StaffPayment {
+  const data = documentData(document);
+  return {
+    ...data,
+    dailyRate: data.dailyRate instanceof Decimal128 ? data.dailyRate.toString() : String(data.dailyRate),
+    fullDays: data.fullDays instanceof Decimal128 ? data.fullDays.toString() : String(data.fullDays),
+    halfDays: data.halfDays instanceof Decimal128 ? data.halfDays.toString() : String(data.halfDays),
+    amount: data.amount instanceof Decimal128 ? data.amount.toString() : String(data.amount),
+  } as StaffPayment;
 }
 
 function refillFromMongo(document: Document): LpgRefillEvent {
@@ -76,13 +88,14 @@ function refillFromMongo(document: Document): LpgRefillEvent {
 
 export async function listOperations() {
   const database = await getDatabase();
-  const [vegetableOrders, vendorItemRates, cylinders, lpgRefills, pricing, staff, advancePayments, recurringRents] = await Promise.all([
+  const [vegetableOrders, vendorItemRates, cylinders, lpgRefills, pricing, staff, staffPayments, advancePayments, recurringRents] = await Promise.all([
     database.collection("vegetable_orders").find({ shopId }).sort({ businessDate: -1 }).limit(180).toArray(),
     database.collection("vendor_item_rates").find({ shopId }).sort({ itemName: 1 }).toArray(),
     database.collection("lpg_cylinders").find({ shopId }).sort({ code: 1 }).toArray(),
     database.collection("lpg_refill_events").find({ shopId }).sort({ refilledOn: -1 }).toArray(),
     database.collection("settings").findOne({ shopId, key: "lpg-pricing" }),
     database.collection("staff").find({ shopId }).sort({ name: 1 }).toArray(),
+    database.collection("staff_transactions").find({ shopId }).sort({ periodEnd: -1, paidOn: -1 }).limit(180).toArray(),
     database.collection("advance_payments").find({ shopId }).sort({ label: 1 }).toArray(),
     database.collection("recurring_rents").find({ shopId }).sort({ label: 1 }).toArray(),
   ]);
@@ -96,6 +109,7 @@ export async function listOperations() {
       refillCost: pricing.refillCost instanceof Decimal128 ? pricing.refillCost.toString() : String(pricing.refillCost),
     } : { initialCostPerCylinder: "4600.00", refillCost: "2600.00" },
     staff: staff.map(staffFromMongo),
+    staffPayments: staffPayments.map(staffPaymentFromMongo),
     advancePayments: advancePayments.map(advanceFromMongo),
     recurringRents: recurringRents.map(rentFromMongo),
   };
@@ -173,9 +187,22 @@ export async function saveStaffMember(member: StaffMember) {
     ...member, shopId,
     monthlySalary: Decimal128.fromString(member.monthlySalary),
     advanceBalance: Decimal128.fromString(member.advanceBalance),
+    dailySalary: member.dailySalary ? Decimal128.fromString(member.dailySalary) : undefined,
   };
   await database.collection("staff").updateOne({ shopId, id: member.id }, { $set: stored }, { upsert: true });
   return member;
+}
+
+export async function saveStaffPayment(payment: StaffPayment) {
+  await ensureOperationIndexes();
+  const database = await getDatabase();
+  const stored = {
+    ...payment, shopId,
+    dailyRate: Decimal128.fromString(payment.dailyRate), fullDays: Decimal128.fromString(payment.fullDays),
+    halfDays: Decimal128.fromString(payment.halfDays), amount: Decimal128.fromString(payment.amount),
+  };
+  await database.collection("staff_transactions").updateOne({ shopId, id: payment.id }, { $set: stored }, { upsert: true });
+  return payment;
 }
 
 export async function saveLpgPricing(pricing: LpgPricing) {

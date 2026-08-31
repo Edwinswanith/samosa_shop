@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createDemoState } from "./seed";
-import { calculateCylinderDays, calculateFinancialSnapshot, calculateLpgPaymentSnapshot, calculateVegetableLineAmount, calculateVegetableOrderTotal, findVendorPrimaryRate, getPendingVegetablePayments, getVegetablePaymentStatus } from "./operations";
+import { calculateCylinderDays, calculateFinancialSnapshot, calculateLpgPaymentSnapshot, calculateStaffSalary, calculateVegetableLineAmount, calculateVegetableOrderTotal, findVendorPrimaryRate, getPendingVegetablePayments, getVegetablePaymentStatus } from "./operations";
 
 describe("operations projections", () => {
   it("keeps vegetable totals pending until every line has an amount", () => {
@@ -10,6 +10,11 @@ describe("operations projections", () => {
   it("counts LPG usage inclusively from the start date", () => {
     expect(calculateCylinderDays("2026-08-24", undefined, "2026-08-27")).toBe(4);
     expect(calculateCylinderDays(undefined, undefined, "2026-08-27")).toBeUndefined();
+  });
+
+  it("calculates salary with a Sunday half-day", () => {
+    expect(calculateStaffSalary("1000", "7", "1")).toBe("7500.00");
+    expect(calculateStaffSalary("600", "7", "1")).toBe("4500.00");
   });
 
   it("calculates a vegetable line from quantity and vendor rate", () => {

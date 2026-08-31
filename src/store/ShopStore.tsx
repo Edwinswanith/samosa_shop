@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { createDemoState } from "@/domain/seed";
 import { isBusinessDateClosed } from "@/domain/closing";
 import { primaryRatesFromOrder } from "@/domain/operations";
-import type { AdvancePayment, LpgCylinder, LpgPricing, LpgRefillEvent, NewShopTransaction, RecurringRent, ShopState, ShopTransaction, StaffMember, VegetableOrder } from "@/domain/types";
+import type { AdvancePayment, LpgCylinder, LpgPricing, LpgRefillEvent, NewShopTransaction, RecurringRent, ShopState, ShopTransaction, StaffMember, StaffPayment, VegetableOrder } from "@/domain/types";
 
 const STORAGE_KEY = "samosa-shop-state-v1";
 const OPERATIONS_OUTBOX_KEY = "samosa-shop-operations-outbox-v1";
@@ -101,6 +101,7 @@ interface ShopStoreValue {
   saveLpgRefill: (event: LpgRefillEvent) => Promise<void>;
   updateLpgPricing: (pricing: LpgPricing) => Promise<void>;
   updateStaffMember: (id: string, updates: Partial<StaffMember>) => Promise<void>;
+  saveStaffPayment: (payment: StaffPayment) => Promise<void>;
   updateAdvancePayment: (id: string, updates: Partial<AdvancePayment>) => Promise<void>;
   updateRecurringRent: (id: string, updates: Partial<RecurringRent>) => Promise<void>;
   closeDay: (businessDate: string, countedCash: string, note: string) => void;
@@ -130,6 +131,7 @@ export function ShopStoreProvider({ children }: { children: ReactNode }) {
             ...parsed,
             lpgPricing: parsed.lpgPricing ?? defaults.lpgPricing,
             lpgRefills: parsed.lpgRefills ?? [],
+            staffPayments: parsed.staffPayments ?? defaults.staffPayments,
             vendorItemRates: parsed.vendorItemRates ?? defaults.vendorItemRates,
             transactions: [...(parsed.transactions ?? []), ...requiredInvestments.filter((required) => !(parsed.transactions ?? []).some((existing) => existing.idempotencyKey === required.idempotencyKey))],
           });
@@ -148,7 +150,7 @@ export function ShopStoreProvider({ children }: { children: ReactNode }) {
     queueMicrotask(() => setOperationsSyncPending(pendingOperations.length));
     void fetch("/api/operations")
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Could not load shop operations")))
-      .then((payload: { data: Pick<ShopState, "vegetableOrders" | "vendorItemRates" | "cylinders" | "lpgRefills" | "lpgPricing" | "staff" | "advancePayments" | "recurringRents"> }) => setState((current) => {
+      .then((payload: { data: Pick<ShopState, "vegetableOrders" | "vendorItemRates" | "cylinders" | "lpgRefills" | "lpgPricing" | "staff" | "staffPayments" | "advancePayments" | "recurringRents"> }) => setState((current) => {
         const loaded = { ...current, ...payload.data };
         return pendingOperations.reduce((next, pending) => withVegetableOrder(next, pending.data, pending.setAsPrimaryRates), loaded);
       }))
@@ -283,6 +285,13 @@ export function ShopStoreProvider({ children }: { children: ReactNode }) {
         if (!response.ok) throw new Error("The salary record could not be saved");
       }
       setState((current) => ({ ...current, staff: current.staff.map((member) => member.id === id ? saved : member) }));
+    },
+    saveStaffPayment: async (payment) => {
+      if (mongoMode) {
+        const response = await fetch("/api/operations", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ entity: "staffPayment", data: payment }) });
+        if (!response.ok) throw new Error("The salary payment could not be saved");
+      }
+      setState((current) => ({ ...current, staffPayments: [...current.staffPayments.filter((candidate) => candidate.id !== payment.id), payment] }));
     },
     updateAdvancePayment: async (id, updates) => {
       const existing = state.advancePayments.find((advance) => advance.id === id);

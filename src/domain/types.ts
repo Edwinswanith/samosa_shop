@@ -121,9 +121,27 @@ export interface LpgRefillEvent {
 export interface StaffMember {
   id: string;
   name: string;
+  role?: "Master" | "Helper";
+  dailySalary?: string;
+  startedOn?: string;
   monthlySalary: string;
   advanceBalance: string;
   status: "Active" | "Inactive";
+}
+
+export interface StaffPayment {
+  id: string;
+  idempotencyKey: string;
+  staffId: string;
+  businessDate: string;
+  periodStart: string;
+  periodEnd: string;
+  paidOn: string;
+  dailyRate: string;
+  fullDays: string;
+  halfDays: string;
+  amount: string;
+  note?: string;
 }
 
 export interface VegetableOrderLine {
@@ -193,5 +211,6 @@ export interface ShopState {
   lpgPricing: LpgPricing;
   lpgRefills: LpgRefillEvent[];
   staff: StaffMember[];
+  staffPayments: StaffPayment[];
   closings: DailyClosing[];
 }

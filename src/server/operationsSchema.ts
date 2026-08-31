@@ -43,9 +43,23 @@ export const lpgCylinderSchema = z.object({
 export const staffMemberSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(80),
+  role: z.enum(["Master", "Helper"]).optional(),
+  dailySalary: decimalString.optional(),
+  startedOn: dateString.optional(),
   monthlySalary: decimalString,
   advanceBalance: decimalString,
   status: z.enum(["Active", "Inactive"]),
+});
+
+export const staffPaymentSchema = z.object({
+  id: z.string().min(1), idempotencyKey: z.string().min(1), staffId: z.string().min(1), businessDate: dateString,
+  periodStart: dateString, periodEnd: dateString, paidOn: dateString,
+  dailyRate: decimalString, fullDays: decimalString, halfDays: decimalString, amount: decimalString,
+  note: z.string().trim().max(200).optional(),
+}).superRefine((value, context) => {
+  if (value.periodEnd < value.periodStart) context.addIssue({ code: "custom", path: ["periodEnd"], message: "Period end must be on or after its start" });
+  const expected = Number(value.dailyRate) * (Number(value.fullDays) + Number(value.halfDays) / 2);
+  if (Math.abs(expected - Number(value.amount)) > 0.005) context.addIssue({ code: "custom", path: ["amount"], message: "Amount must match the attendance and daily rate" });
 });
 
 export const advancePaymentSchema = z.object({
@@ -72,6 +86,7 @@ export const operationMutationSchema = z.discriminatedUnion("entity", [
   z.object({ entity: z.literal("vendorItemRate"), data: vendorItemRateSchema }),
   z.object({ entity: z.literal("lpgCylinder"), data: lpgCylinderSchema }),
   z.object({ entity: z.literal("staffMember"), data: staffMemberSchema }),
+  z.object({ entity: z.literal("staffPayment"), data: staffPaymentSchema }),
   z.object({ entity: z.literal("advancePayment"), data: advancePaymentSchema }),
   z.object({ entity: z.literal("recurringRent"), data: recurringRentSchema }),
   z.object({ entity: z.literal("lpgPricing"), data: lpgPricingSchema }),

@@ -110,8 +110,12 @@ export function createDemoState(): ShopState {
     lpgPricing: { initialCostPerCylinder: "4600.00", refillCost: "2600.00" },
     lpgRefills: [],
     staff: [
-      { id: "helper-1", name: "Kumar", monthlySalary: "15000.00", advanceBalance: "3000.00", status: "Active" },
-      { id: "helper-2", name: "Selvi", monthlySalary: "12000.00", advanceBalance: "0.00", status: "Active" },
+      { id: "kaushal", name: "Kousal", role: "Master", dailySalary: "1000.00", startedOn: "2026-08-24", monthlySalary: "0.00", advanceBalance: "1000.00", status: "Active" },
+      { id: "sathish", name: "Sathish", role: "Helper", dailySalary: "600.00", startedOn: "2026-08-24", monthlySalary: "0.00", advanceBalance: "0.00", status: "Active" },
+    ],
+    staffPayments: [
+      { id: "salary-kaushal-2026-08-31", idempotencyKey: "salary-kaushal-2026-08-31", staffId: "kaushal", businessDate: "2026-08-31", periodStart: "2026-08-24", periodEnd: "2026-08-31", paidOn: "2026-08-31", dailyRate: "1000.00", fullDays: "7", halfDays: "1", amount: "7500.00", note: "Sunday 30 August worked half-day" },
+      { id: "salary-sathish-2026-08-31", idempotencyKey: "salary-sathish-2026-08-31", staffId: "sathish", businessDate: "2026-08-31", periodStart: "2026-08-24", periodEnd: "2026-08-31", paidOn: "2026-08-31", dailyRate: "600.00", fullDays: "7", halfDays: "1", amount: "4500.00", note: "Sunday 30 August worked half-day" },
     ],
     closings: [{ businessDate: "2026-08-27", status: "open" }],
   };

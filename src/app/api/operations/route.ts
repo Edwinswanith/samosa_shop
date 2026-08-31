@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { operationMutationSchema } from "@/server/operationsSchema";
-import { deleteVegetableOrder, listOperations, saveAdvancePayment, saveCylinder, saveLpgPricing, saveLpgRefillEvent, saveRecurringRent, saveStaffMember, saveVegetableOrder, saveVendorItemRate } from "@/server/operationsRepository";
+import { deleteVegetableOrder, listOperations, saveAdvancePayment, saveCylinder, saveLpgPricing, saveLpgRefillEvent, saveRecurringRent, saveStaffMember, saveStaffPayment, saveVegetableOrder, saveVendorItemRate } from "@/server/operationsRepository";
 
 function unavailable() {
   return NextResponse.json({ success: false, error: "The operations store is unavailable" }, { status: 503 });
@@ -20,6 +20,7 @@ export async function PUT(request: Request) {
       : parsed.data.entity === "vendorItemRate" ? await saveVendorItemRate(parsed.data.data)
       : parsed.data.entity === "lpgCylinder" ? await saveCylinder(parsed.data.data)
       : parsed.data.entity === "staffMember" ? await saveStaffMember(parsed.data.data)
+      : parsed.data.entity === "staffPayment" ? await saveStaffPayment(parsed.data.data)
       : parsed.data.entity === "advancePayment" ? await saveAdvancePayment(parsed.data.data)
       : parsed.data.entity === "recurringRent" ? await saveRecurringRent(parsed.data.data)
       : parsed.data.entity === "lpgPricing" ? await saveLpgPricing(parsed.data.data)

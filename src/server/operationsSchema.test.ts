@@ -50,4 +50,13 @@ describe("operationMutationSchema", () => {
       amount: "2600.00", paymentStatus: "Due", previousStartedOn: "2026-08-24",
     } }).success).toBe(true);
   });
+
+  it("accepts an auditable paid salary and rejects an incorrect total", () => {
+    const payment = {
+      id: "salary-kaushal-2026-08-31", idempotencyKey: "salary-kaushal-2026-08-31", staffId: "kaushal", businessDate: "2026-08-31", periodStart: "2026-08-24", periodEnd: "2026-08-31",
+      paidOn: "2026-08-31", dailyRate: "1000.00", fullDays: "7", halfDays: "1", amount: "7500.00", note: "Sunday half-day",
+    };
+    expect(operationMutationSchema.safeParse({ entity: "staffPayment", data: payment }).success).toBe(true);
+    expect(operationMutationSchema.safeParse({ entity: "staffPayment", data: { ...payment, amount: "8000.00" } }).success).toBe(false);
+  });
 });

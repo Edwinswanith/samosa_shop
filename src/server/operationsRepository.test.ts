@@ -7,7 +7,7 @@ const { createIndexes, getDatabase } = vi.hoisted(() => {
 
 vi.mock("./mongodb", () => ({ getDatabase }));
 
-import { ensureOperationIndexes, vegetableFromMongo } from "./operationsRepository";
+import { ensureOperationIndexes, staffPaymentFromMongo, vegetableFromMongo } from "./operationsRepository";
 
 describe("operations repository mapping", () => {
   beforeEach(() => {
@@ -28,6 +28,14 @@ describe("operations repository mapping", () => {
     await ensureOperationIndexes();
 
     expect(getDatabase).toHaveBeenCalledTimes(1);
-    expect(createIndexes).toHaveBeenCalledTimes(8);
+    expect(createIndexes).toHaveBeenCalledTimes(9);
+  });
+
+  it("restores decimal salary payment fields from MongoDB", () => {
+    expect(staffPaymentFromMongo({
+      _id: "mongo-id", shopId: "main-shop", id: "salary-kaushal-2026-08-31", idempotencyKey: "salary-kaushal-2026-08-31", staffId: "kaushal", businessDate: "2026-08-31",
+      periodStart: "2026-08-24", periodEnd: "2026-08-31", paidOn: "2026-08-31",
+      dailyRate: "1000.00", fullDays: "7", halfDays: "1", amount: "7500.00",
+    })).toMatchObject({ id: "salary-kaushal-2026-08-31", amount: "7500.00", fullDays: "7", halfDays: "1" });
   });
 });

@@ -97,10 +97,14 @@ describe("ShopApp", () => {
     expect(screen.getByRole("dialog", { name: "Record LPG refill" })).toBeInTheDocument();
     expect(screen.getByLabelText("Refill amount")).toHaveValue("2600.00");
     expect(screen.getByText("Salary monitor")).toBeInTheDocument();
+    expect(screen.getByText("Kousal")).toBeInTheDocument();
+    expect(screen.getByText(/Master.*₹1,000.00 \/ day/)).toBeInTheDocument();
+    expect(screen.getAllByText(/24 August 2026.*31 August 2026/)).toHaveLength(2);
+    expect(screen.getByText(/₹7,500.00 paid/)).toBeInTheDocument();
+    expect(screen.getByText(/₹12,000.00 paid in latest period/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Advances & rent" })).toBeInTheDocument();
     expect(screen.getByText(/₹64,450.00 paid/)).toBeInTheDocument();
     expect(screen.getByText(/₹25,000.00 pending/)).toBeInTheDocument();
-    expect(screen.getAllByText(/₹12,000.00 \/ month/).length).toBeGreaterThan(0);
   });
 
   it("applies a vegetable edit immediately while MongoDB sync continues", async () => {
