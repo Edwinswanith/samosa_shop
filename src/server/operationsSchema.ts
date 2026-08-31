@@ -8,6 +8,8 @@ export const vegetableOrderSchema = z.object({
   shopId: z.string().min(1),
   businessDate: dateString,
   vendorId: z.string().min(1).optional(),
+  paymentStatus: z.enum(["Pending", "Paid"]).optional(),
+  paidOn: dateString.optional(),
   items: z.array(z.object({
     id: z.string().min(1),
     name: z.string().trim().min(1).max(80),
@@ -18,6 +20,8 @@ export const vegetableOrderSchema = z.object({
   })).min(1),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
+}).superRefine((value, context) => {
+  if (value.paymentStatus === "Paid" && !value.paidOn) context.addIssue({ code: "custom", path: ["paidOn"], message: "Paid date is required" });
 });
 
 export const vendorItemRateSchema = z.object({

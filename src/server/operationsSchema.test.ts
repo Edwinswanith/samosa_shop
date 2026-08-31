@@ -7,6 +7,19 @@ describe("operationMutationSchema", () => {
     expect(operationMutationSchema.safeParse({ entity: "vegetableOrder", data: createDemoState().vegetableOrders[0] }).success).toBe(true);
   });
 
+  it("requires a paid date only when a vegetable bill is marked paid", () => {
+    const paid = structuredClone(createDemoState().vegetableOrders[0]);
+    paid.paymentStatus = "Paid";
+    paid.paidOn = paid.businessDate;
+    expect(operationMutationSchema.safeParse({ entity: "vegetableOrder", data: paid }).success).toBe(true);
+
+    paid.paidOn = undefined;
+    expect(operationMutationSchema.safeParse({ entity: "vegetableOrder", data: paid }).success).toBe(false);
+
+    paid.paymentStatus = "Pending";
+    expect(operationMutationSchema.safeParse({ entity: "vegetableOrder", data: paid }).success).toBe(true);
+  });
+
   it("rejects negative quantities", () => {
     const order = structuredClone(createDemoState().vegetableOrders[0]);
     order.items[0].quantity = "-1";

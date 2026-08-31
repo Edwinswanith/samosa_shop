@@ -52,16 +52,16 @@ export function createDemoState(): ShopState {
     ],
     customers: [{ id: "university", name: "VIT", note: "Weekly settlement" }],
     vegetableOrders: [
-      { id: "vegetables-2026-08-24", shopId: "main-shop", businessDate: "2026-08-24", vendorId: "ravi", createdAt: "2026-08-24T06:30:00.000Z", updatedAt: "2026-08-24T06:30:00.000Z", items: [
+      { id: "vegetables-2026-08-24", shopId: "main-shop", businessDate: "2026-08-24", vendorId: "ravi", paymentStatus: "Paid", paidOn: "2026-08-24", createdAt: "2026-08-24T06:30:00.000Z", updatedAt: "2026-08-24T06:30:00.000Z", items: [
         { id: "potato", name: "Potato", quantity: "20", unit: "kg" }, { id: "cabbage", name: "Cabbage", quantity: "5", unit: "kg" }, { id: "carrot", name: "Carrot", quantity: "0.5", unit: "kg" }, { id: "bell-pepper", name: "Bell pepper", quantity: "0.5", unit: "kg" },
       ] },
-      { id: "vegetables-2026-08-25", shopId: "main-shop", businessDate: "2026-08-25", vendorId: "ravi", createdAt: "2026-08-25T06:30:00.000Z", updatedAt: "2026-08-25T06:30:00.000Z", items: [
+      { id: "vegetables-2026-08-25", shopId: "main-shop", businessDate: "2026-08-25", vendorId: "ravi", paymentStatus: "Paid", paidOn: "2026-08-25", createdAt: "2026-08-25T06:30:00.000Z", updatedAt: "2026-08-25T06:30:00.000Z", items: [
         { id: "potato", name: "Potato", quantity: "15", unit: "kg" }, { id: "cabbage", name: "Cabbage", quantity: "5", unit: "kg" },
       ] },
-      { id: "vegetables-2026-08-26", shopId: "main-shop", businessDate: "2026-08-26", vendorId: "ravi", createdAt: "2026-08-26T06:30:00.000Z", updatedAt: "2026-08-26T06:30:00.000Z", items: [
+      { id: "vegetables-2026-08-26", shopId: "main-shop", businessDate: "2026-08-26", vendorId: "ravi", paymentStatus: "Paid", paidOn: "2026-08-26", createdAt: "2026-08-26T06:30:00.000Z", updatedAt: "2026-08-26T06:30:00.000Z", items: [
         { id: "potato", name: "Potato", quantity: "10", unit: "kg" }, { id: "carrot", name: "Carrot", quantity: "0.5", unit: "kg" }, { id: "beans", name: "Beans", quantity: "0.5", unit: "kg" }, { id: "onion", name: "Onion", quantity: "1", unit: "kg" }, { id: "tomato", name: "Tomato", quantity: "1", unit: "kg" },
       ] },
-      { id: "vegetables-2026-08-27", shopId: "main-shop", businessDate: "2026-08-27", vendorId: "ravi", createdAt: "2026-08-27T06:30:00.000Z", updatedAt: "2026-08-27T06:30:00.000Z", items: [
+      { id: "vegetables-2026-08-27", shopId: "main-shop", businessDate: "2026-08-27", vendorId: "ravi", paymentStatus: "Paid", paidOn: "2026-08-27", createdAt: "2026-08-27T06:30:00.000Z", updatedAt: "2026-08-27T06:30:00.000Z", items: [
         { id: "potato", name: "Potato", quantity: "20", unit: "kg" }, { id: "cabbage", name: "Cabbage", quantity: "4", unit: "kg" }, { id: "carrot", name: "Carrot", quantity: "0.5", unit: "kg" }, { id: "bell-pepper", name: "Bell pepper", quantity: "0.5", unit: "kg" }, { id: "brinjal", name: "Brinjal", quantity: "0.5", unit: "kg" }, { id: "coriander", name: "Coriander", quantity: "1", unit: "packet" },
       ] },
     ],

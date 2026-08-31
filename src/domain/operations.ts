@@ -22,6 +22,17 @@ export function calculateVegetableOrderTotal(order: VegetableOrder): string | un
   return money(amounts.reduce((total, amount) => total.plus(amount), new Decimal(0)));
 }
 
+export function getVegetablePaymentStatus(order: VegetableOrder): "Pending" | "Paid" {
+  return order.paymentStatus === "Paid" ? "Paid" : "Pending";
+}
+
+export function getPendingVegetablePayments(orders: VegetableOrder[]) {
+  return orders
+    .filter((order) => getVegetablePaymentStatus(order) === "Pending")
+    .map((order) => ({ businessDate: order.businessDate, total: calculateVegetableOrderTotal(order) }))
+    .sort((left, right) => right.businessDate.localeCompare(left.businessDate));
+}
+
 export function findVendorPrimaryRate(rates: VendorItemRate[], vendorId: string | undefined, itemName: string, unit: VegetableOrderLine["unit"]): string | undefined {
   if (!vendorId) return undefined;
   const normalizedName = itemName.trim().toLocaleLowerCase("en-IN");

@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { CalendarDays, Check, ChevronRight, CircleDollarSign, Flame, IndianRupee, Landmark, Pencil, Plus, Trash2, UsersRound, X } from "lucide-react";
+import { BellRing, CalendarDays, Check, CheckCircle2, ChevronRight, CircleDollarSign, Flame, IndianRupee, Landmark, Pencil, Plus, Trash2, UsersRound, X } from "lucide-react";
 import { formatMoney } from "@/domain/decimal";
-import { calculateCylinderDays, calculateFinancialSnapshot, calculateLpgPaymentSnapshot, calculateVegetableLineAmount, calculateVegetableOrderTotal, findVendorPrimaryRate } from "@/domain/operations";
+import { calculateCylinderDays, calculateFinancialSnapshot, calculateLpgPaymentSnapshot, calculateVegetableLineAmount, calculateVegetableOrderTotal, findVendorPrimaryRate, getPendingVegetablePayments, getVegetablePaymentStatus } from "@/domain/operations";
 import type { AdvancePayment, LpgCylinder, LpgPricing, LpgRefillEvent, RecurringRent, StaffMember, VegetableOrder, VegetableOrderLine } from "@/domain/types";
 import { currentBusinessDate, formatBusinessDate } from "@/lib/date";
 import { useShopStore } from "@/store/ShopStore";
@@ -22,16 +22,25 @@ export function VegetableOrdersPanel() {
   const { state, saveVegetableOrder, operationsSyncPending, operationsSyncStatus } = useShopStore();
   const [editing, setEditing] = useState<VegetableOrder | null>(null);
   const orders = state.vegetableOrders.slice().sort((left, right) => right.businessDate.localeCompare(left.businessDate));
+  const pendingPayments = getPendingVegetablePayments(orders);
+  const latestPaidDate = orders.filter((order) => getVegetablePaymentStatus(order) === "Paid").map((order) => order.paidOn ?? order.businessDate).sort().at(-1);
 
   function createOrder() {
     const now = new Date().toISOString();
     const vendorId = state.vendors[0]?.id;
-    setEditing({ id: crypto.randomUUID(), shopId: "main-shop", businessDate: currentBusinessDate(), vendorId, items: [newLine("Potato", findVendorPrimaryRate(state.vendorItemRates, vendorId, "Potato", "kg"))], createdAt: now, updatedAt: now });
+    setEditing({ id: crypto.randomUUID(), shopId: "main-shop", businessDate: currentBusinessDate(), vendorId, paymentStatus: "Pending", items: [newLine("Potato", findVendorPrimaryRate(state.vendorItemRates, vendorId, "Potato", "kg"))], createdAt: now, updatedAt: now });
   }
 
   return <>
     <section className="vegetableSection">
       <header className="vegetableHeader"><div><span className="eyebrow">Daily purchasing</span><h2>Vegetable orders</h2><p>Quantities are saved now. Add each line amount whenever the bill arrives.</p></div><button className="primaryButton" onClick={createOrder}><Plus size={16} /> New vegetable order</button></header>
+      <div className={`vegetablePaymentNotice ${pendingPayments.length ? "pending" : "paid"}`} role="status">
+        <span>{pendingPayments.length ? <BellRing size={20} /> : <CheckCircle2 size={20} />}</span>
+        <div><strong>{pendingPayments.length ? `${pendingPayments.length} vegetable ${pendingPayments.length === 1 ? "bill" : "bills"} pending` : "All vegetable bills paid"}</strong>
+          <small>{pendingPayments.length ? "Open the dated order to update its payment status." : latestPaidDate ? `Paid through ${formatBusinessDate(latestPaidDate)}` : "No vegetable bills recorded yet"}</small>
+        </div>
+        {pendingPayments.length > 0 && <div className="pendingPaymentDates">{pendingPayments.map((payment) => <span key={payment.businessDate}><b>{formatBusinessDate(payment.businessDate)}</b><small>{payment.total ? formatMoney(payment.total) : "Amount pending"}</small></span>)}</div>}
+      </div>
       {operationsSyncStatus !== "idle" && <p className={`rateSyncNotice ${operationsSyncStatus}`} role="status">
         {operationsSyncStatus === "syncing" ? "Syncing automatically to MongoDB…"
           : operationsSyncStatus === "retrying" && operationsSyncPending > 0 ? "Saved locally · database unavailable · retrying automatically"
@@ -48,7 +57,7 @@ export function VegetableOrdersPanel() {
             <button aria-label={`Edit vegetable order ${order.businessDate}`} onClick={() => setEditing(structuredClone(order))}><Pencil size={15} /></button>
           </div>
           <div className="vegetableLines">{order.items.map((item) => <div key={item.id}><span>{item.name}</span><strong>{item.quantity} {item.unit}</strong><small>{item.rate ? `${formatMoney(item.rate)} / ${item.unit}` : "Rate pending"}</small></div>)}</div>
-          <footer><span>{order.items.length} vegetables</span></footer>
+          <footer><span>{order.items.length} vegetables</span><b className={`vegetablePaymentStatus ${getVegetablePaymentStatus(order).toLowerCase()}`}>{getVegetablePaymentStatus(order)}</b></footer>
         </article>;
       })}</div>
     </section>
@@ -70,7 +79,10 @@ function VegetableOrderDialog({ order, onClose, onSave }: { order: VegetableOrde
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setSaving(true); setError("");
-    try { await onSave({ ...draft, shopId: draft.shopId || "main-shop", items: draft.items.map((item) => ({ ...item, amount: calculateVegetableLineAmount(item) })), updatedAt: new Date().toISOString() }, setAsPrimaryRates); onClose(); }
+    try {
+      const paymentStatus = getVegetablePaymentStatus(draft);
+      await onSave({ ...draft, shopId: draft.shopId || "main-shop", paymentStatus, paidOn: paymentStatus === "Paid" ? (draft.paidOn || draft.businessDate) : undefined, items: draft.items.map((item) => ({ ...item, amount: calculateVegetableLineAmount(item) })), updatedAt: new Date().toISOString() }, setAsPrimaryRates); onClose();
+    }
     catch (caught) { setError(caught instanceof Error ? caught.message : "Could not save the order"); }
     finally { setSaving(false); }
   }
@@ -89,6 +101,7 @@ function VegetableOrderDialog({ order, onClose, onSave }: { order: VegetableOrde
     <header><div><span className="eyebrow">Editable order</span><h2>Vegetables for the day</h2></div><button type="button" className="iconButton" aria-label="Close vegetable order" onClick={onClose}><X size={19} /></button></header>
     <form onSubmit={submit}>
       <div className="orderMetaFields"><label>Order date<input type="date" value={draft.businessDate} onChange={(event) => setDraft((current) => ({ ...current, businessDate: event.target.value }))} required /></label><label>Vegetable vendor<select aria-label="Vegetable vendor" value={draft.vendorId ?? ""} onChange={(event) => setDraft((current) => ({ ...current, vendorId: event.target.value || undefined }))}><option value="">Select vendor</option>{state.vendors.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div>
+      <div className="orderMetaFields paymentMetaFields"><label>Payment status<select aria-label="Payment status" value={getVegetablePaymentStatus(draft)} onChange={(event) => { const paymentStatus = event.target.value as "Pending" | "Paid"; setDraft((current) => ({ ...current, paymentStatus, paidOn: paymentStatus === "Paid" ? (current.paidOn || current.businessDate) : undefined })); }}><option>Pending</option><option>Paid</option></select></label>{getVegetablePaymentStatus(draft) === "Paid" && <label>Paid on<input aria-label="Paid on" type="date" value={draft.paidOn ?? draft.businessDate} onChange={(event) => setDraft((current) => ({ ...current, paidOn: event.target.value }))} required /></label>}</div>
       <div className="vegetableEditRows">{draft.items.map((item, index) => <div className="vegetableEditRow" key={item.id}><span className="lineNumber">{index + 1}</span><label>Vegetable<input list="vegetable-options" value={item.name} onChange={(event) => changeVegetable(item, event.target.value)} required /></label><label>Quantity<input inputMode="decimal" value={item.quantity} onChange={(event) => updateLine(item.id, { quantity: event.target.value, amount: undefined })} required /></label><label>Unit<select value={item.unit} onChange={(event) => { const unit = event.target.value as VegetableOrderLine["unit"]; updateLine(item.id, { unit, rate: findVendorPrimaryRate(state.vendorItemRates, draft.vendorId, item.name, unit), amount: undefined }); }}><option value="kg">kg</option><option value="packet">packet</option></select></label><label>Rate / unit<div className="moneyInput"><IndianRupee size={14} /><input inputMode="decimal" value={item.rate ?? ""} onChange={(event) => updateLine(item.id, { rate: event.target.value || undefined, amount: undefined })} placeholder="Add rate" /></div></label><div className="computedLine"><small>Line total</small><strong>{calculateVegetableLineAmount(item) ? formatMoney(calculateVegetableLineAmount(item)!) : "Pending"}</strong></div><button type="button" className="removeLine" aria-label={`Remove ${item.name}`} disabled={draft.items.length === 1} onClick={() => setDraft((current) => ({ ...current, items: current.items.filter((candidate) => candidate.id !== item.id) }))}><Trash2 size={15} /></button></div>)}</div>
       <datalist id="vegetable-options">{vegetableNames.map((name) => <option key={name} value={name} />)}</datalist>
       <button type="button" className="addLineButton" onClick={addVegetable}><Plus size={15} /> Add another vegetable</button>

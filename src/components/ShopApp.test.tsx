@@ -57,6 +57,8 @@ describe("ShopApp", () => {
     render(<ShopApp />);
     fireEvent.click(screen.getAllByRole("button", { name: "Inventory" })[0]);
     expect(screen.getByRole("heading", { name: "Vegetable orders" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("All vegetable bills paid");
+    expect(screen.getByRole("status")).toHaveTextContent("Paid through 27 August 2026");
     expect(screen.getByText("Database auto-sync enabled")).toBeInTheDocument();
     expect(screen.getByText("76.6 kg")).toBeInTheDocument();
     expect(screen.getByText("14 kg")).toBeInTheDocument();
@@ -76,9 +78,15 @@ describe("ShopApp", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit vegetable order 2026-08-27" }));
     expect(screen.getByRole("dialog", { name: "Edit vegetable order" })).toBeInTheDocument();
     expect(screen.getByLabelText("Vegetable vendor")).toBeInTheDocument();
+    expect(screen.getByLabelText("Payment status")).toHaveValue("Paid");
+    expect(screen.getByLabelText("Paid on")).toHaveValue("2026-08-27");
     expect(screen.getAllByText("Rate / unit").length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Update primary vendor rates")).toBeChecked();
     expect(screen.getByText(/future orders from Ravi Vegetables/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Close vegetable order" }));
+    fireEvent.click(screen.getByRole("button", { name: "New vegetable order" }));
+    expect(screen.getByLabelText("Payment status")).toHaveValue("Pending");
+    expect(screen.queryByLabelText("Paid on")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Close vegetable order" }));
     fireEvent.click(screen.getAllByRole("button", { name: "More" })[0]);
     expect(screen.getByText("LPG monitor")).toBeInTheDocument();
@@ -117,6 +125,18 @@ describe("ShopApp", () => {
     render(<ShopApp />);
     fireEvent.click(screen.getAllByRole("button", { name: "Inventory" })[0]);
     await waitFor(() => expect(screen.getByText("₹737.00")).toBeInTheDocument());
+  });
+
+  it("shows a dated notification after a vegetable bill is marked pending", () => {
+    render(<ShopApp />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Inventory" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Edit vegetable order 2026-08-27" }));
+    fireEvent.change(screen.getByLabelText("Payment status"), { target: { value: "Pending" } });
+    expect(screen.queryByLabelText("Paid on")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save order" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("1 vegetable bill pending");
+    expect(screen.getByRole("status")).toHaveTextContent("27 August 2026");
   });
 
   it("retries a pending primary-rate update when the connection returns", async () => {

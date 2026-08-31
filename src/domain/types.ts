@@ -140,6 +140,8 @@ export interface VegetableOrder {
   shopId: string;
   businessDate: string;
   vendorId?: string;
+  paymentStatus?: "Pending" | "Paid";
+  paidOn?: string;
   items: VegetableOrderLine[];
   createdAt: string;
   updatedAt: string;

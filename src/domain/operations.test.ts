@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createDemoState } from "./seed";
-import { calculateCylinderDays, calculateFinancialSnapshot, calculateLpgPaymentSnapshot, calculateVegetableLineAmount, calculateVegetableOrderTotal, findVendorPrimaryRate } from "./operations";
+import { calculateCylinderDays, calculateFinancialSnapshot, calculateLpgPaymentSnapshot, calculateVegetableLineAmount, calculateVegetableOrderTotal, findVendorPrimaryRate, getPendingVegetablePayments, getVegetablePaymentStatus } from "./operations";
 
 describe("operations projections", () => {
   it("keeps vegetable totals pending until every line has an amount", () => {
@@ -20,6 +20,26 @@ describe("operations projections", () => {
     expect(calculateVegetableLineAmount({ id: "potato", name: "Potato", quantity: "", unit: "kg", rate: "25" })).toBeUndefined();
     expect(calculateVegetableLineAmount({ id: "potato", name: "Potato", quantity: ".", unit: "kg", rate: "25" })).toBeUndefined();
     expect(calculateVegetableLineAmount({ id: "potato", name: "Potato", quantity: "20", unit: "kg", rate: "." })).toBeUndefined();
+  });
+
+  it("treats legacy vegetable orders without a payment status as pending", () => {
+    const order = structuredClone(createDemoState().vegetableOrders[0]);
+    delete order.paymentStatus;
+    delete order.paidOn;
+    expect(getVegetablePaymentStatus(order)).toBe("Pending");
+  });
+
+  it("lists pending vegetable bills by date with their known totals", () => {
+    const [paid, pending] = structuredClone(createDemoState().vegetableOrders);
+    paid.paymentStatus = "Paid";
+    paid.paidOn = paid.businessDate;
+    pending.paymentStatus = "Pending";
+    pending.paidOn = undefined;
+    pending.items = [{ id: "potato", name: "Potato", quantity: "10", unit: "kg", rate: "25", amount: "250" }];
+
+    expect(getPendingVegetablePayments([paid, pending])).toEqual([
+      { businessDate: pending.businessDate, total: "250.00" },
+    ]);
   });
 
   it("finds a vendor's current primary rate without changing historical orders", () => {

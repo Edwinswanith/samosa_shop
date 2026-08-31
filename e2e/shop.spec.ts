@@ -15,6 +15,7 @@ test("inventory and reports remain available on mobile", async ({ page }) => {
   await page.getByRole("button", { name: "Inventory", exact: true }).filter({ visible: true }).click();
   await expect(page.getByRole("heading", { name: /ordered and on the shelf/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Vegetable orders" })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("All vegetable bills paid");
   await page.getByRole("button", { name: "Reports", exact: true }).filter({ visible: true }).click();
   await expect(page.getByRole("heading", { name: /Cash flow is not profit/i })).toBeVisible();
 });
@@ -38,8 +39,9 @@ test("vegetable rates save and can become the vendor primary rates", async ({ pa
   await page.getByRole("button", { name: "Edit vegetable order 2026-08-27" }).click();
   await expect(page.getByLabel("Update primary vendor rates")).toBeChecked();
   await expect(page.getByText(/future orders from Ravi Vegetables/i)).toBeVisible();
-  await expect(page.getByLabel("Rate / unit").first()).toHaveValue("25");
+  const rates = page.getByLabel("Rate / unit");
+  for (const [index, rate] of ["25", "30", "90", "80", "50", "10"].entries()) await rates.nth(index).fill(rate);
   await page.getByRole("button", { name: "Save order" }).click();
   await expect(page.getByRole("dialog", { name: "Edit vegetable order" })).toBeHidden();
-  await expect(page.getByText("₹717.00")).toBeVisible();
+  await expect(page.getByText("₹740.00")).toBeVisible();
 });
