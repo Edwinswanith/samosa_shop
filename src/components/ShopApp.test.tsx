@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ShopApp } from "./ShopApp";
 
@@ -51,6 +51,21 @@ describe("ShopApp", () => {
     expect(screen.getByRole("button", { name: "Purchase" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Expense" }));
     expect(screen.getByRole("option", { name: "Equipment investment" })).toBeInTheDocument();
+  });
+
+  it("shows a collapsible date-wise expense ledger without sales", () => {
+    render(<ShopApp />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Daily Entry" })[0]);
+    const ledger = screen.getByRole("region", { name: "Daily expense ledger" });
+    expect(within(ledger).getByRole("heading", { name: "Where the money went" })).toBeInTheDocument();
+    expect(within(ledger).getByRole("button", { name: /31 August 2026.*₹12,000.00/ })).toHaveAttribute("aria-expanded", "true");
+    expect(within(ledger).getByText("Kousal salary")).toBeInTheDocument();
+    const august27 = within(ledger).getByRole("button", { name: /27 August 2026/ });
+    fireEvent.click(august27);
+    expect(august27).toHaveAttribute("aria-expanded", "true");
+    expect(within(ledger).getAllByText("Equipment investment")).toHaveLength(2);
+    expect(within(ledger).queryByText("Samosa")).not.toBeInTheDocument();
+    expect(within(ledger).queryByText("Kathi roll")).not.toBeInTheDocument();
   });
 
   it("shows editable vegetable orders and operational monitors", () => {

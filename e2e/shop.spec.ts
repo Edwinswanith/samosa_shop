@@ -42,6 +42,19 @@ test("paid staff salaries show their dated attendance basis", async ({ page }) =
   await expect(page.getByText(/₹12,000.00 paid in latest period/)).toBeVisible();
 });
 
+test("daily entry shows expandable expense-only history", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /^(Daily Entry|Entry)$/ }).filter({ visible: true }).click();
+  const ledger = page.getByRole("region", { name: "Daily expense ledger" });
+  await expect(ledger.getByRole("heading", { name: "Where the money went" })).toBeVisible();
+  await expect(ledger.getByRole("button", { name: /31 August 2026.*₹12,000.00/ })).toHaveAttribute("aria-expanded", "true");
+  await expect(ledger.getByText("Kousal salary")).toBeVisible();
+  await ledger.getByRole("button", { name: /27 August 2026/ }).click();
+  await expect(ledger.getByText("Equipment investment").first()).toBeVisible();
+  await expect(ledger.getByText("Samosa", { exact: true })).toHaveCount(0);
+  await expect(ledger.getByText("Kathi roll", { exact: true })).toHaveCount(0);
+});
+
 test("vegetable rates save and can become the vendor primary rates", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Inventory", exact: true }).filter({ visible: true }).click();
