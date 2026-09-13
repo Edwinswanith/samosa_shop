@@ -20,6 +20,21 @@ describe("shop ledger projections", () => {
     });
   });
 
+  it("ignores cost-only vegetable lines with zero quantity when calculating stock", () => {
+    const stateWithCostOnlyLine = {
+      ...state,
+      vegetableOrders: [...state.vegetableOrders, {
+        ...state.vegetableOrders[0],
+        id: "vegetables-cost-only",
+        businessDate: "2026-09-11",
+        items: [{ id: "tomato-cost-only", name: "Tomato", quantity: "0", unit: "kg" as const, amount: "10.00" }],
+      }],
+    };
+
+    expect(() => calculateInventory(stateWithCostOnlyLine)).not.toThrow();
+    expect(calculateInventory(stateWithCostOnlyLine).find((item) => item.itemId === "tomato")?.quantity).toBe("1000");
+  });
+
   it("keeps customer invoices and payments reconcilable", () => {
     expect(calculateReceivable(state, "university")).toBe("10110.00");
   });

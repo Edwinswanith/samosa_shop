@@ -21,8 +21,12 @@ export function calculateInventory(state: ShopState) {
     const orderedQuantity = state.vegetableOrders.flatMap((order) => order.items)
       .filter((line) => line.name.trim().toLocaleLowerCase("en-IN") === normalizedItemName)
       .reduce((total, line) => {
-        const normalized = normalizeQuantity(line.quantity, line.unit);
-        return normalized.unit === defaultBaseUnit ? total.plus(normalized.quantity) : total;
+        try {
+          const normalized = normalizeQuantity(line.quantity, line.unit);
+          return normalized.unit === defaultBaseUnit ? total.plus(normalized.quantity) : total;
+        } catch {
+          return total;
+        }
       }, new Decimal(0));
     const quantity = ledgerQuantity.plus(orderedQuantity);
     return { itemId: item.id, quantity: quantity.toFixed(), unit: latest?.normalizedUnit ?? defaultBaseUnit };
