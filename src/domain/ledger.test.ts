@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createDemoState } from "./seed";
-import { calculateCustomerCreditStatus, calculateDashboard, calculateInventory, calculatePeriodSummary, calculateReceivable, calculateSettlementAmountThroughDate } from "./ledger";
+import { calculateCustomerCreditStatus, calculateDashboard, calculateInventory, calculatePeriodSummary, calculateReceivable, calculateSettlementAmountThroughDate, calculateTotalReceivable } from "./ledger";
 
 describe("shop ledger projections", () => {
   const state = createDemoState();
@@ -37,6 +37,14 @@ describe("shop ledger projections", () => {
 
   it("keeps customer invoices and payments reconcilable", () => {
     expect(calculateReceivable(state, "university")).toBe("10110.00");
+    const withCanteenSale = {
+      ...state,
+      transactions: [...state.transactions, {
+        ...state.transactions.find((transaction) => transaction.kind === "sale")!,
+        id: "canteen-sale", idempotencyKey: "canteen-sale", customerId: "vit-canteen", revenue: "2800.00",
+      }],
+    };
+    expect(calculateTotalReceivable(withCanteenSale)).toBe("12910.00");
   });
 
   it("allocates customer receipts oldest-first and exposes the paid-through date", () => {

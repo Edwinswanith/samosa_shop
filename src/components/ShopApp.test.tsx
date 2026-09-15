@@ -29,18 +29,30 @@ describe("ShopApp", () => {
     expect(screen.getAllByText("₹20,110.00").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /sales by business date/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "7 days" })).toBeInTheDocument();
-    expect(screen.getByText("VIT")).toBeInTheDocument();
+    expect(screen.getAllByText("VIT E Block Hostel").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("VIT Canteen").length).toBeGreaterThan(0);
     expect(screen.getAllByText("24 August 2026").length).toBeGreaterThan(0);
     expect(screen.getAllByText("₹10,110.00").length).toBeGreaterThan(0);
   });
 
   it("opens a customer payment prefilled to close sales through a selected date", () => {
     render(<ShopApp />);
-    fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
+    const eBlockAccount = screen.getByRole("region", { name: "VIT E Block Hostel credit account" });
+    fireEvent.click(within(eBlockAccount).getByRole("button", { name: "Record payment" }));
     expect(screen.getByRole("dialog", { name: "Record customer payment" })).toBeInTheDocument();
     expect(screen.getByLabelText("Amount received")).toHaveValue("1004.00");
     fireEvent.change(screen.getByLabelText("Close sales through"), { target: { value: "2026-08-27" } });
     expect(screen.getByLabelText("Amount received")).toHaveValue("10110.00");
+  });
+
+  it("chooses a VIT customer location when recording a University sale", () => {
+    render(<ShopApp />);
+    fireEvent.click(screen.getAllByRole("button", { name: /add entry/i })[0]);
+    fireEvent.change(screen.getByLabelText("Channel"), { target: { value: "University" } });
+
+    expect(screen.getByLabelText("Customer location")).toHaveValue("university");
+    expect(screen.getByRole("option", { name: "VIT E Block Hostel" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "VIT Canteen" })).toBeInTheDocument();
   });
 
   it("opens the fast entry sheet", () => {

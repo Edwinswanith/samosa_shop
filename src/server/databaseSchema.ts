@@ -11,7 +11,7 @@ export const databaseCollections: CollectionDefinition[] = [
   { name: "products", indexes: [{ key: { shopId: 1, name: 1 }, unique: true }, { key: { shopId: 1, active: 1 } }] },
   { name: "items", indexes: [{ key: { shopId: 1, name: 1 }, unique: true }, { key: { shopId: 1, category: 1, active: 1 } }] },
   { name: "vendors", indexes: [{ key: { shopId: 1, name: 1 }, unique: true }] },
-  { name: "customers", indexes: [{ key: { shopId: 1, name: 1 } }, { key: { shopId: 1, phone: 1 }, sparse: true }] },
+  { name: "customers", indexes: [{ key: { shopId: 1, id: 1 }, unique: true }, { key: { shopId: 1, name: 1 } }, { key: { shopId: 1, phone: 1 }, sparse: true }] },
   { name: "purchases", indexes: [{ key: { shopId: 1, businessDate: -1, vendorId: 1 } }, { key: { shopId: 1, idempotencyKey: 1 }, unique: true, sparse: true }] },
   { name: "vegetable_orders", indexes: [{ key: { shopId: 1, businessDate: -1 }, unique: true }, { key: { shopId: 1, updatedAt: -1 } }] },
   { name: "vendor_item_rates", indexes: [{ key: { shopId: 1, vendorId: 1, itemName: 1, unit: 1 }, unique: true }, { key: { shopId: 1, updatedAt: -1 } }] },
@@ -27,5 +27,5 @@ export const databaseCollections: CollectionDefinition[] = [
   { name: "payments", indexes: [{ key: { shopId: 1, customerId: 1, businessDate: -1 } }, { key: { shopId: 1, idempotencyKey: 1 }, unique: true }] },
   { name: "daily_closings", indexes: [{ key: { shopId: 1, businessDate: 1 }, unique: true }] },
   { name: "settings", indexes: [{ key: { shopId: 1, key: 1 }, unique: true }] },
-  { name: "transactions", indexes: [{ key: { shopId: 1, idempotencyKey: 1 }, unique: true }, { key: { shopId: 1, businessDate: -1, kind: 1 } }, { key: { shopId: 1, createdAt: -1 } }] },
+  { name: "transactions", indexes: [{ key: { shopId: 1, idempotencyKey: 1 }, unique: true }, { key: { shopId: 1, businessDate: -1, kind: 1 } }, { key: { shopId: 1, customerId: 1, businessDate: -1 } }, { key: { shopId: 1, createdAt: -1 } }] },
 ];

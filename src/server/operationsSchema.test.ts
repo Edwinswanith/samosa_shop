@@ -3,6 +3,12 @@ import { createDemoState } from "@/domain/seed";
 import { operationMutationSchema } from "./operationsSchema";
 
 describe("operationMutationSchema", () => {
+  it("accepts a persisted customer location", () => {
+    expect(operationMutationSchema.safeParse({ entity: "customer", data: {
+      id: "vit-canteen", name: "VIT Canteen", note: "Separate credit account",
+    } }).success).toBe(true);
+  });
+
   it("accepts a vegetable order with amounts still pending", () => {
     expect(operationMutationSchema.safeParse({ entity: "vegetableOrder", data: createDemoState().vegetableOrders[0] }).success).toBe(true);
   });

@@ -11,4 +11,8 @@ export const transactionSchema = z.discriminatedUnion("kind", [
   z.object({ ...common, kind: z.literal("inventory"), itemId: z.string(), transactionType: z.enum(["purchase", "consumption", "waste", "adjustment"]), enteredQuantity: decimalString, enteredUnit: z.enum(["kg", "g", "l", "ml", "piece", "packet", "box", "bottle", "cylinder"]), normalizedQuantity: decimalString, normalizedUnit: z.enum(["g", "ml", "piece", "packet", "box", "bottle", "cylinder"]), value: decimalString, vendorId: z.string().optional(), note: z.string().max(500).optional() }),
   z.object({ ...common, kind: z.literal("expense"), expenseType: z.enum(["operating", "investment"]).optional(), category: z.string().min(1), amount: decimalString, paymentMethod: z.enum(["Cash", "UPI"]), note: z.string().max(500).optional() }),
   z.object({ ...common, kind: z.literal("payment"), customerId: z.string(), amount: decimalString, paymentMethod: z.enum(["Cash", "UPI"]), direction: z.enum(["received", "refunded"]), settlesThroughDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), note: z.string().max(500).optional() }),
-]);
+]).superRefine((transaction, context) => {
+  if (transaction.kind === "sale" && transaction.channel === "University" && !transaction.customerId) {
+    context.addIssue({ code: "custom", path: ["customerId"], message: "University sales require a customer account" });
+  }
+});

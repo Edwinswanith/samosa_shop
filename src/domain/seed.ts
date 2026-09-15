@@ -1,4 +1,5 @@
 import type { InventoryTransaction, PaymentTransaction, SaleTransaction, ShopState } from "./types";
+import { vitCustomerAccounts } from "./customers";
 
 const base = {
   shopId: "main-shop",
@@ -50,7 +51,7 @@ export function createDemoState(): ShopState {
       { id: "ravi", name: "Ravi Vegetables", note: "Morning delivery" },
       { id: "metro-oil", name: "Metro Oil Store" },
     ],
-    customers: [{ id: "university", name: "VIT", note: "Weekly settlement" }],
+    customers: vitCustomerAccounts.map((customer) => ({ ...customer })),
     vegetableOrders: [
       { id: "vegetables-2026-08-24", shopId: "main-shop", businessDate: "2026-08-24", vendorId: "ravi", paymentStatus: "Paid", paidOn: "2026-08-24", createdAt: "2026-08-24T06:30:00.000Z", updatedAt: "2026-08-24T06:30:00.000Z", items: [
         { id: "potato", name: "Potato", quantity: "20", unit: "kg" }, { id: "cabbage", name: "Cabbage", quantity: "5", unit: "kg" }, { id: "carrot", name: "Carrot", quantity: "0.5", unit: "kg" }, { id: "bell-pepper", name: "Bell pepper", quantity: "0.5", unit: "kg" },

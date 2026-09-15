@@ -12,6 +12,18 @@ describe("transaction API validation", () => {
     expect(result.success).toBe(true);
   });
 
+  it("requires a customer account for University sales", () => {
+    const universitySale = {
+      id: "sale-vit-1", shopId: "main-shop", kind: "sale", businessDate: "2026-09-15",
+      createdAt: "2026-09-15T06:30:00.000Z", createdBy: "owner", idempotencyKey: "sale-vit-1",
+      productId: "samosa", channel: "University", quantity: "200", unitPrice: "14.00",
+      revenue: "2800.00", paymentMethod: "Credit",
+    };
+
+    expect(transactionSchema.safeParse(universitySale).success).toBe(false);
+    expect(transactionSchema.safeParse({ ...universitySale, customerId: "vit-canteen" }).success).toBe(true);
+  });
+
   it("rejects JavaScript numeric money values", () => {
     const result = transactionSchema.safeParse({
       id: "expense-1", shopId: "main-shop", kind: "expense", businessDate: "2026-08-27",

@@ -3,6 +3,12 @@ import { z } from "zod";
 const decimalString = z.string().regex(/^\d+(\.\d+)?$/, "Use a positive decimal number");
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 
+export const customerSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  name: z.string().trim().min(1).max(80),
+  note: z.string().trim().max(160).optional(),
+});
+
 export const vegetableOrderSchema = z.object({
   id: z.string().min(1),
   shopId: z.string().min(1),
@@ -82,6 +88,7 @@ export const lpgRefillEventSchema = z.object({
 });
 
 export const operationMutationSchema = z.discriminatedUnion("entity", [
+  z.object({ entity: z.literal("customer"), data: customerSchema }),
   z.object({ entity: z.literal("vegetableOrder"), data: vegetableOrderSchema, setAsPrimaryRates: z.boolean().optional() }),
   z.object({ entity: z.literal("vendorItemRate"), data: vendorItemRateSchema }),
   z.object({ entity: z.literal("lpgCylinder"), data: lpgCylinderSchema }),

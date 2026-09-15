@@ -5,6 +5,9 @@ test("owner can navigate and open the quick entry workflow", async ({ page }) =>
   await expect(page.getByRole("heading", { name: /Good afternoon/i })).toBeVisible();
   await page.getByRole("button", { name: "New entry" }).click();
   await expect(page.getByRole("dialog", { name: "New shop entry" })).toBeVisible();
+  await page.getByLabel("Channel").selectOption("University");
+  await expect(page.getByLabel("Customer location")).toHaveValue("university");
+  await expect(page.getByLabel("Customer location").getByRole("option")).toHaveText(["VIT E Block Hostel", "VIT Canteen"]);
   await page.getByRole("button", { name: "Purchase" }).click();
   await expect(page.getByLabel("Vendor")).toBeVisible();
   await expect(page.getByText("₹14.00")).toBeVisible();

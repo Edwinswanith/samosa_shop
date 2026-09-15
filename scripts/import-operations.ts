@@ -18,11 +18,17 @@ async function main() {
     const database = client.db(databaseName);
     const state = createDemoState();
     const existing = new Set((await database.listCollections({}, { nameOnly: true }).toArray()).map(({ name }) => name));
-    for (const name of ["vegetable_orders", "vendor_item_rates", "advance_payments", "recurring_rents", "lpg_refill_events", "settings"]) {
+    for (const name of ["customers", "vegetable_orders", "vendor_item_rates", "advance_payments", "recurring_rents", "lpg_refill_events", "settings"]) {
       const definition = databaseCollections.find((candidate) => candidate.name === name);
       if (!existing.has(name)) await database.createCollection(name);
       if (definition) await database.collection(name).createIndexes(definition.indexes);
     }
+
+    await database.collection("customers").bulkWrite(state.customers.map((customer) => ({ updateOne: {
+      filter: { shopId, id: customer.id },
+      update: { $set: { ...customer, shopId } },
+      upsert: true,
+    } })));
 
     await database.collection("vegetable_orders").bulkWrite(state.vegetableOrders.map((order) => {
       const { vendorId, ...insertOnly } = order;
@@ -64,7 +70,7 @@ async function main() {
       refillCost: Decimal128.fromString(state.lpgPricing.refillCost),
     } }, { upsert: true });
 
-    console.log(`Operations import complete: vegetableOrders=${state.vegetableOrders.length}, vendorRates=${state.vendorItemRates.length}, advances=${state.advancePayments.length}, rents=${state.recurringRents.length}, lpgInitial=${state.lpgPricing.initialCostPerCylinder}, lpgRefill=${state.lpgPricing.refillCost}`);
+    console.log(`Operations import complete: customers=${state.customers.length}, vegetableOrders=${state.vegetableOrders.length}, vendorRates=${state.vendorItemRates.length}, advances=${state.advancePayments.length}, rents=${state.recurringRents.length}, lpgInitial=${state.lpgPricing.initialCostPerCylinder}, lpgRefill=${state.lpgPricing.refillCost}`);
   } catch (error) {
     const message = error instanceof Error ? error.message.replace(uri, "[redacted]") : "Unknown operations import error";
     console.error(`Operations import failed: ${message}`);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { operationMutationSchema } from "@/server/operationsSchema";
-import { deleteVegetableOrder, listOperations, saveAdvancePayment, saveCylinder, saveLpgPricing, saveLpgRefillEvent, saveRecurringRent, saveStaffMember, saveStaffPayment, saveVegetableOrder, saveVendorItemRate } from "@/server/operationsRepository";
+import { deleteVegetableOrder, listOperations, saveAdvancePayment, saveCustomer, saveCylinder, saveLpgPricing, saveLpgRefillEvent, saveRecurringRent, saveStaffMember, saveStaffPayment, saveVegetableOrder, saveVendorItemRate } from "@/server/operationsRepository";
 
 function unavailable() {
   return NextResponse.json({ success: false, error: "The operations store is unavailable" }, { status: 503 });
@@ -16,7 +16,8 @@ export async function PUT(request: Request) {
   const parsed = operationMutationSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ success: false, error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
   try {
-    const result = parsed.data.entity === "vegetableOrder" ? await saveVegetableOrder(parsed.data.data, parsed.data.setAsPrimaryRates)
+    const result = parsed.data.entity === "customer" ? await saveCustomer(parsed.data.data)
+      : parsed.data.entity === "vegetableOrder" ? await saveVegetableOrder(parsed.data.data, parsed.data.setAsPrimaryRates)
       : parsed.data.entity === "vendorItemRate" ? await saveVendorItemRate(parsed.data.data)
       : parsed.data.entity === "lpgCylinder" ? await saveCylinder(parsed.data.data)
       : parsed.data.entity === "staffMember" ? await saveStaffMember(parsed.data.data)

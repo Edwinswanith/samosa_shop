@@ -24,6 +24,7 @@ export function EntrySheet({ onClose }: { onClose: () => void }) {
   const [price, setPrice] = useState(state.products[0]?.defaultPrice ?? "20");
   const [total, setTotal] = useState("");
   const [channel, setChannel] = useState<"Walk-in" | "University" | "Other">("Walk-in");
+  const [customerId, setCustomerId] = useState(state.customers[0]?.id ?? "");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Cash");
   const [category, setCategory] = useState("Labour");
   const [note, setNote] = useState("");
@@ -53,7 +54,7 @@ export function EntrySheet({ onClose }: { onClose: () => void }) {
     if (entryType === "Sale") {
       await addTransaction({
         kind: "sale", businessDate: date, productId,
-        customerId: channel === "University" ? "university" : undefined,
+        customerId: channel === "University" ? customerId : undefined,
         channel, quantity, unitPrice: price, revenue: calculateLineAmount(quantity, price), paymentMethod,
       });
     } else if (entryType === "Expense") {
@@ -99,6 +100,7 @@ export function EntrySheet({ onClose }: { onClose: () => void }) {
               <label>Product<select value={productId} onChange={(event) => { setProductId(event.target.value); const product = state.products.find((p) => p.id === event.target.value); if (product) setPrice(product.defaultPrice); }}>{state.products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}</select></label>
               <div className="fieldPair"><label>Quantity<input inputMode="decimal" value={quantity} onChange={(event) => setQuantity(event.target.value)} required /></label><label>Price each<div className="moneyInput"><IndianRupee size={16} /><input inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} required /></div></label></div>
               <label>Channel<select value={channel} onChange={(event) => { const next = event.target.value as typeof channel; setChannel(next); setPaymentMethod(next === "University" ? "Credit" : "Cash"); }}>{["Walk-in", "University", "Other"].map((value) => <option key={value}>{value}</option>)}</select></label>
+              {channel === "University" && <label>Customer location<select value={customerId} onChange={(event) => setCustomerId(event.target.value)} required>{state.customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}</select></label>}
             </>}
 
             {["Purchase", "Consumption", "Waste"].includes(entryType) && <>

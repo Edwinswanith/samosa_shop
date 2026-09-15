@@ -7,7 +7,7 @@ const { createIndexes, getDatabase } = vi.hoisted(() => {
 
 vi.mock("./mongodb", () => ({ getDatabase }));
 
-import { ensureOperationIndexes, staffPaymentFromMongo, vegetableFromMongo } from "./operationsRepository";
+import { customerFromMongo, ensureOperationIndexes, staffPaymentFromMongo, vegetableFromMongo } from "./operationsRepository";
 
 describe("operations repository mapping", () => {
   beforeEach(() => {
@@ -28,7 +28,13 @@ describe("operations repository mapping", () => {
     await ensureOperationIndexes();
 
     expect(getDatabase).toHaveBeenCalledTimes(1);
-    expect(createIndexes).toHaveBeenCalledTimes(9);
+    expect(createIndexes).toHaveBeenCalledTimes(10);
+  });
+
+  it("restores a customer without leaking MongoDB fields", () => {
+    expect(customerFromMongo({
+      _id: "mongo-id", shopId: "main-shop", id: "vit-canteen", name: "VIT Canteen", note: "Separate credit account",
+    })).toEqual({ id: "vit-canteen", name: "VIT Canteen", note: "Separate credit account" });
   });
 
   it("restores decimal salary payment fields from MongoDB", () => {

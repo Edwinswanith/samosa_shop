@@ -1,6 +1,6 @@
 import { Decimal128, type Document } from "mongodb";
 import { primaryRatesFromOrder } from "@/domain/operations";
-import type { AdvancePayment, LpgCylinder, LpgPricing, LpgRefillEvent, RecurringRent, StaffMember, StaffPayment, VendorItemRate, VegetableOrder } from "@/domain/types";
+import type { AdvancePayment, Customer, LpgCylinder, LpgPricing, LpgRefillEvent, RecurringRent, StaffMember, StaffPayment, VendorItemRate, VegetableOrder } from "@/domain/types";
 import { getDatabase } from "./mongodb";
 import { databaseCollections } from "./databaseSchema";
 
@@ -9,7 +9,7 @@ let operationIndexesPromise: Promise<void> | undefined;
 
 export function ensureOperationIndexes() {
   operationIndexesPromise ??= getDatabase().then(async (database) => {
-    await Promise.all(["vegetable_orders", "vendor_item_rates", "lpg_cylinders", "lpg_refill_events", "staff", "staff_transactions", "advance_payments", "recurring_rents", "settings"].map(async (name) => {
+    await Promise.all(["customers", "vegetable_orders", "vendor_item_rates", "lpg_cylinders", "lpg_refill_events", "staff", "staff_transactions", "advance_payments", "recurring_rents", "settings"].map(async (name) => {
       const definition = databaseCollections.find((candidate) => candidate.name === name);
       if (definition) await database.collection(name).createIndexes(definition.indexes);
     }));
@@ -18,6 +18,10 @@ export function ensureOperationIndexes() {
     throw error;
   });
   return operationIndexesPromise;
+}
+
+export function customerFromMongo(document: Document): Customer {
+  return documentData(document) as unknown as Customer;
 }
 
 function documentData(document: Document) {
@@ -88,7 +92,8 @@ function refillFromMongo(document: Document): LpgRefillEvent {
 
 export async function listOperations() {
   const database = await getDatabase();
-  const [vegetableOrders, vendorItemRates, cylinders, lpgRefills, pricing, staff, staffPayments, advancePayments, recurringRents] = await Promise.all([
+  const [customers, vegetableOrders, vendorItemRates, cylinders, lpgRefills, pricing, staff, staffPayments, advancePayments, recurringRents] = await Promise.all([
+    database.collection("customers").find({ shopId }).sort({ name: 1 }).toArray(),
     database.collection("vegetable_orders").find({ shopId }).sort({ businessDate: -1 }).limit(180).toArray(),
     database.collection("vendor_item_rates").find({ shopId }).sort({ itemName: 1 }).toArray(),
     database.collection("lpg_cylinders").find({ shopId }).sort({ code: 1 }).toArray(),
@@ -100,6 +105,7 @@ export async function listOperations() {
     database.collection("recurring_rents").find({ shopId }).sort({ label: 1 }).toArray(),
   ]);
   return {
+    customers: customers.map(customerFromMongo),
     vegetableOrders: vegetableOrders.map(vegetableFromMongo),
     vendorItemRates: vendorItemRates.map(vendorRateFromMongo),
     cylinders: cylinders.map(cylinderFromMongo),
@@ -113,6 +119,13 @@ export async function listOperations() {
     advancePayments: advancePayments.map(advanceFromMongo),
     recurringRents: recurringRents.map(rentFromMongo),
   };
+}
+
+export async function saveCustomer(customer: Customer) {
+  await ensureOperationIndexes();
+  const database = await getDatabase();
+  await database.collection("customers").updateOne({ shopId, id: customer.id }, { $set: { ...customer, shopId } }, { upsert: true });
+  return customer;
 }
 
 export async function saveVegetableOrder(order: VegetableOrder, setAsPrimaryRates = false) {

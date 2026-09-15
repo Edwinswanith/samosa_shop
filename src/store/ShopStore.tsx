@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createDemoState } from "@/domain/seed";
+import { mergeCustomerAccounts } from "@/domain/customers";
 import { isBusinessDateClosed } from "@/domain/closing";
 import { primaryRatesFromOrder } from "@/domain/operations";
 import type { AdvancePayment, LpgCylinder, LpgPricing, LpgRefillEvent, NewShopTransaction, RecurringRent, ShopState, ShopTransaction, StaffMember, StaffPayment, VegetableOrder } from "@/domain/types";
@@ -133,6 +134,7 @@ export function ShopStoreProvider({ children }: { children: ReactNode }) {
             lpgRefills: parsed.lpgRefills ?? [],
             staffPayments: parsed.staffPayments ?? defaults.staffPayments,
             vendorItemRates: parsed.vendorItemRates ?? defaults.vendorItemRates,
+            customers: mergeCustomerAccounts(parsed.customers),
             transactions: [...(parsed.transactions ?? []), ...requiredInvestments.filter((required) => !(parsed.transactions ?? []).some((existing) => existing.idempotencyKey === required.idempotencyKey))],
           });
           storageReady.current = true;
@@ -150,8 +152,8 @@ export function ShopStoreProvider({ children }: { children: ReactNode }) {
     queueMicrotask(() => setOperationsSyncPending(pendingOperations.length));
     void fetch("/api/operations")
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Could not load shop operations")))
-      .then((payload: { data: Pick<ShopState, "vegetableOrders" | "vendorItemRates" | "cylinders" | "lpgRefills" | "lpgPricing" | "staff" | "staffPayments" | "advancePayments" | "recurringRents"> }) => setState((current) => {
-        const loaded = { ...current, ...payload.data };
+      .then((payload: { data: Pick<ShopState, "customers" | "vegetableOrders" | "vendorItemRates" | "cylinders" | "lpgRefills" | "lpgPricing" | "staff" | "staffPayments" | "advancePayments" | "recurringRents"> }) => setState((current) => {
+        const loaded = { ...current, ...payload.data, customers: mergeCustomerAccounts(payload.data.customers) };
         return pendingOperations.reduce((next, pending) => withVegetableOrder(next, pending.data, pending.setAsPrimaryRates), loaded);
       }))
       .catch(() => undefined);

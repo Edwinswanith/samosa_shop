@@ -43,6 +43,10 @@ export function calculateReceivable(state: ShopState, customerId: string): strin
   return money(creditSales.minus(payments));
 }
 
+export function calculateTotalReceivable(state: ShopState): string {
+  return money(state.customers.reduce((total, customer) => total.plus(calculateReceivable(state, customer.id)), new Decimal(0)));
+}
+
 export interface CustomerCreditRow {
   businessDate: string;
   invoiced: string;
