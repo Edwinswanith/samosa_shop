@@ -36,7 +36,7 @@ describe("ShopApp", () => {
     expect(within(table).getByRole("columnheader", { name: "Cutlet (veg)" })).toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: "Cutlet (chicken)" })).toBeInTheDocument();
     const row = within(table).getAllByRole("row")[1];
-    expect(within(row).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["13 October 20262026-10-13", "0₹0.00", "1₹100.00", "2₹200.00", "3₹300.00", "4₹400.00", "₹1,000.00"]);
+    expect(within(row).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["13 October 20262026-10-13", "0₹0.00", "1₹100.00", "0₹0.00", "2₹200.00", "3₹300.00", "4₹400.00", "₹1,000.00"]);
     fireEvent.click(screen.getAllByRole("button", { name: /add entry/i })[0]);
     expect(screen.getByRole("option", { name: "Cutlet (chicken)" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /type unspecified/ })).not.toBeInTheDocument();
