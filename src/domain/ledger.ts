@@ -123,6 +123,7 @@ export function calculateDashboard(state: ShopState, businessDate: string) {
 }
 
 export interface DailySalesSummary {
+  productSales: Record<string, { quantity: string; revenue: string }>;
   businessDate: string;
   samosaQuantity: string;
   samosaRevenue: string;
@@ -143,14 +144,17 @@ export function calculatePeriodSummary(state: ShopState, from?: string, to?: str
     .plus(expenses.reduce((total, entry) => total.plus(entry.amount), new Decimal(0)));
 
   const grouped = new Map<string, {
+    productSales: Record<string, { quantity: Decimal; revenue: Decimal }>;
     samosaQuantity: Decimal; samosaRevenue: Decimal;
     kathiRollQuantity: Decimal; kathiRollRevenue: Decimal; revenue: Decimal;
   }>();
   for (const sale of sales) {
     const day = grouped.get(sale.businessDate) ?? {
-      samosaQuantity: new Decimal(0), samosaRevenue: new Decimal(0),
+      productSales: Object.create(null) as Record<string, { quantity: Decimal; revenue: Decimal }>, samosaQuantity: new Decimal(0), samosaRevenue: new Decimal(0),
       kathiRollQuantity: new Decimal(0), kathiRollRevenue: new Decimal(0), revenue: new Decimal(0),
     };
+    const product = day.productSales[sale.productId] ?? { quantity: new Decimal(0), revenue: new Decimal(0) };
+    day.productSales[sale.productId] = { quantity: product.quantity.plus(sale.quantity), revenue: product.revenue.plus(sale.revenue) };
     if (sale.productId === "samosa") {
       day.samosaQuantity = day.samosaQuantity.plus(sale.quantity);
       day.samosaRevenue = day.samosaRevenue.plus(sale.revenue);
@@ -167,6 +171,7 @@ export function calculatePeriodSummary(state: ShopState, from?: string, to?: str
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([businessDate, day]) => ({
       businessDate,
+      productSales: Object.fromEntries(Object.entries(day.productSales).map(([id, product]) => [id, { quantity: product.quantity.toFixed(), revenue: money(product.revenue) }])),
       samosaQuantity: day.samosaQuantity.toFixed(),
       samosaRevenue: money(day.samosaRevenue),
       kathiRollQuantity: day.kathiRollQuantity.toFixed(),

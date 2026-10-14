@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createDemoState } from "@/domain/seed";
 import { ShopApp } from "./ShopApp";
 
 function installLocalStorage() {
@@ -18,6 +19,27 @@ describe("ShopApp", () => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
     window.localStorage?.clear?.();
+  });
+
+  it("restores variant counts and labels from an older saved product catalog", async () => {
+    installLocalStorage();
+    const state = createDemoState();
+    const template = state.transactions.find((entry) => entry.kind === "sale")!;
+    state.products = state.products.filter((product) => ["samosa", "kathi-roll"].includes(product.id));
+    state.transactions = ["chicken-roll", "paneer-roll", "veg-cutlet", "chicken-cutlet"].map((productId, i) => ({ ...template, id: productId, idempotencyKey: productId, productId, businessDate: "2026-10-13", quantity: String(i + 1), revenue: String((i + 1) * 100) }));
+    window.localStorage.setItem("samosa-shop-state-v1", JSON.stringify(state));
+    render(<ShopApp />);
+    const table = screen.getByRole("table");
+    await waitFor(() => expect(within(table).getByText("13 October 2026")).toBeInTheDocument());
+    expect(within(table).getByRole("columnheader", { name: "Kathi roll (chicken)" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Kathi roll (veg, paneer)" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Cutlet (veg)" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Cutlet (chicken)" })).toBeInTheDocument();
+    const row = within(table).getAllByRole("row")[1];
+    expect(within(row).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["13 October 20262026-10-13", "0₹0.00", "1₹100.00", "2₹200.00", "3₹300.00", "4₹400.00", "₹1,000.00"]);
+    fireEvent.click(screen.getAllByRole("button", { name: /add entry/i })[0]);
+    expect(screen.getByRole("option", { name: "Cutlet (chicken)" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /type unspecified/ })).not.toBeInTheDocument();
   });
 
   it("shows the daily operating summary", () => {

@@ -57,7 +57,7 @@ function Dashboard({ onAdd, onCloseDay }: { onAdd: () => void; onCloseDay: () =>
   const overall = calculatePeriodSummary(state);
   return <>
     <section className="pageIntro"><div><span className="eyebrow">Thursday · Open since 6:30 AM</span><h1>Good afternoon, Edwin.</h1><p>Your counter is moving well. University sales lead today&apos;s revenue.</p></div><button className="outlineButton" onClick={onCloseDay}><CalendarCheck size={17} /> Close today</button></section>
-    <section className="metricGrid"><MetricCard label="Overall sales" value={formatMoney(overall.revenue)} note={`${overall.unitsSold} items across all recorded days`} trend="Lifetime" icon={IndianRupee} tone="saffron" /><MetricCard label="Overall spending" value={formatMoney(overall.spending)} note="Purchases, operating costs, and investments" trend="Recorded" icon={WalletCards} tone="tomato" /><MetricCard label="Overall profit" value={formatMoney(overall.profit)} note="Sales minus all recorded spending" trend="Net" icon={ArrowUpRight} tone="leaf" /><MetricCard label="Today's sales" value={formatMoney(dashboard.revenue)} note={`${dashboard.productQuantities.samosa ?? "0"} samosas · ${dashboard.productQuantities["kathi-roll"] ?? "0"} rolls`} trend="Daily" icon={ShoppingBasket} tone="ink" /></section>
+    <section className="metricGrid"><MetricCard label="Overall sales" value={formatMoney(overall.revenue)} note={`${overall.unitsSold} items across all recorded days`} trend="Lifetime" icon={IndianRupee} tone="saffron" /><MetricCard label="Overall spending" value={formatMoney(overall.spending)} note="Purchases, operating costs, and investments" trend="Recorded" icon={WalletCards} tone="tomato" /><MetricCard label="Overall profit" value={formatMoney(overall.profit)} note="Sales minus all recorded spending" trend="Net" icon={ArrowUpRight} tone="leaf" /><MetricCard label="Today's sales" value={formatMoney(dashboard.revenue)} note={`${dashboard.unitsSold} items sold today`} trend="Daily" icon={ShoppingBasket} tone="ink" /></section>
     <FinancialSnapshotStrip />
     <SalesByDate />
     <section className="dashboardGrid">
@@ -87,6 +87,11 @@ function SalesByDate() {
   const rangeFrom = period === "today" ? today : period === "week" ? daysBefore(today, 6) : period === "custom" ? from : undefined;
   const rangeTo = period === "today" || period === "week" ? today : period === "custom" ? to : undefined;
   const summary = useMemo(() => calculatePeriodSummary(state, rangeFrom, rangeTo), [rangeFrom, rangeTo, state]);
+  const soldIds = new Set(summary.dailySales.flatMap((day) => Object.keys(day.productSales)));
+  const columns = [
+    ...state.products.filter((product) => product.active || soldIds.has(product.id)),
+    ...[...soldIds].filter((id) => !state.products.some((product) => product.id === id)).map((id) => ({ id, name: id, color: "#61764b" })),
+  ];
   const periodLabel = period === "today" ? "Today" : period === "week" ? "Last 7 days" : period === "custom" ? "Custom dates" : "All recorded dates";
 
   return <article className="panel salesLedgerPanel">
@@ -95,7 +100,7 @@ function SalesByDate() {
       <div className="rangePresets">{[["today", "Today"], ["week", "7 days"], ["all", "All time"], ["custom", "Custom"]].map(([value, label]) => <button key={value} className={period === value ? "active" : ""} onClick={() => setPeriod(value as SalesPeriod)}>{label}</button>)}</div>
       {period === "custom" && <div className="customRange"><label>From<input aria-label="Sales from date" type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label><span>to</span><label>Until<input aria-label="Sales until date" type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label></div>}
     </div>
-    <div className="salesTableWrap"><table className="salesTable"><thead><tr><th>Date</th><th><span className="productDot samosa" />Samosa <small>₹14</small></th><th><span className="productDot roll" />Kathi roll <small>₹65</small></th><th>Daily sales</th></tr></thead><tbody>{summary.dailySales.length ? summary.dailySales.slice().reverse().map((day) => <tr key={day.businessDate}><td><strong>{formatBusinessDate(day.businessDate)}</strong><small>{day.businessDate}</small></td><td><strong>{day.samosaQuantity}</strong><small>{formatMoney(day.samosaRevenue)}</small></td><td><strong>{day.kathiRollQuantity}</strong><small>{formatMoney(day.kathiRollRevenue)}</small></td><td><strong>{formatMoney(day.revenue)}</strong></td></tr>) : <tr><td colSpan={4} className="emptySales">No sales recorded in this range.</td></tr>}</tbody></table></div>
+    <div className="salesTableWrap"><table className="salesTable"><thead><tr><th>Date</th>{columns.map((product) => <th key={product.id}><span className="productDot" style={{ backgroundColor: product.color }} />{product.name}</th>)}<th>Daily sales</th></tr></thead><tbody>{summary.dailySales.length ? summary.dailySales.slice().reverse().map((day) => <tr key={day.businessDate}><td><strong>{formatBusinessDate(day.businessDate)}</strong><small>{day.businessDate}</small></td>{columns.map((product) => <td key={product.id}><strong>{day.productSales[product.id]?.quantity ?? "0"}</strong><small>{formatMoney(day.productSales[product.id]?.revenue ?? "0")}</small></td>)}<td><strong>{formatMoney(day.revenue)}</strong></td></tr>) : <tr><td colSpan={columns.length + 2} className="emptySales">No sales recorded in this range.</td></tr>}</tbody></table></div>
   </article>;
 }
 

@@ -1,3 +1,4 @@
+import { createDemoState } from "../src/domain/seed";
 import { expect, test } from "@playwright/test";
 
 test("owner can navigate and open the quick entry workflow", async ({ page }) => {
@@ -69,4 +70,20 @@ test("vegetable rates save and can become the vendor primary rates", async ({ pa
   await page.getByRole("button", { name: "Save order" }).click();
   await expect(page.getByRole("dialog", { name: "Edit vegetable order" })).toBeHidden();
   await expect(page.getByText("₹740.00")).toBeVisible();
+});
+
+test("sales dashboard shows roll and cutlet variants after a fresh load", async ({ page }) => {
+  const state = createDemoState();
+  const template = state.transactions.find((entry) => entry.kind === "sale")!;
+  state.products = state.products.filter((product) => ["samosa", "kathi-roll"].includes(product.id));
+  state.transactions = ["chicken-roll", "paneer-roll", "veg-cutlet", "chicken-cutlet"].map((productId, i) => ({ ...template, id: productId, idempotencyKey: productId, productId, businessDate: "2026-10-13", quantity: String(i + 1), revenue: String((i + 1) * 100) }));
+  await page.addInitScript((saved) => window.localStorage.setItem("samosa-shop-state-v1", JSON.stringify(saved)), state);
+  await page.goto("/");
+  const table = page.getByRole("table");
+  await expect(table.getByRole("columnheader")).toHaveText(["Date", "Samosa", "Kathi roll (chicken)", "Kathi roll (veg, paneer)", "Cutlet (veg)", "Cutlet (chicken)", "Daily sales"]);
+  await expect(table.getByRole("row").nth(1).getByRole("cell")).toHaveText(["13 October 20262026-10-13", "0₹0.00", "1₹100.00", "2₹200.00", "3₹300.00", "4₹400.00", "₹1,000.00"]);
+  await page.reload();
+  await expect(table.getByRole("row").nth(1).getByRole("cell").last()).toHaveText("₹1,000.00");
+  await page.getByRole("button", { name: "New entry" }).click();
+  await expect(page.getByLabel("Product").getByRole("option")).toHaveText(["Samosa", "Kathi roll (chicken)", "Kathi roll (veg, paneer)", "Cutlet (veg)", "Cutlet (chicken)"]);
 });

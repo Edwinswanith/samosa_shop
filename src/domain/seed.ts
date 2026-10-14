@@ -1,3 +1,4 @@
+import { mergeShopProducts } from "./products";
 import type { InventoryTransaction, PaymentTransaction, SaleTransaction, ShopState } from "./types";
 import { vitCustomerAccounts } from "./customers";
 
@@ -43,10 +44,7 @@ export function createDemoState(): ShopState {
       { id: "brinjal", name: "Brinjal", category: "Vegetables", defaultUnit: "kg", active: true },
       { id: "coriander", name: "Coriander", category: "Vegetables", defaultUnit: "packet", active: true },
     ],
-    products: [
-      { id: "samosa", name: "Samosa", defaultPrice: "14.00", active: true, color: "#c8672a" },
-      { id: "kathi-roll", name: "Kathi roll", defaultPrice: "65.00", active: true, color: "#61764b" },
-    ],
+    products: mergeShopProducts(),
     vendors: [
       { id: "ravi", name: "Ravi Vegetables", note: "Morning delivery" },
       { id: "metro-oil", name: "Metro Oil Store" },

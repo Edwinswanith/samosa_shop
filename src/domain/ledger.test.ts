@@ -88,7 +88,7 @@ describe("shop ledger projections", () => {
       category: "Equipment investment", amount: "1500.00", note: "Mixture asset",
     }));
     expect(summary.dailySales).toHaveLength(5);
-    expect(summary.dailySales.at(-1)).toEqual({
+    expect(summary.dailySales.at(-1)).toMatchObject({
       businessDate: "2026-08-27",
       samosaQuantity: "400",
       samosaRevenue: "5600.00",
@@ -98,4 +98,14 @@ describe("shop ledger projections", () => {
     });
     expect(calculatePeriodSummary(state, "2026-08-24", "2026-08-25").revenue).toBe("10584.00");
   });
+  it("shows separate roll and cutlet variants by date, including unknown products", () => {
+    const template = state.transactions.find((t) => t.kind === "sale")!;
+    const products = ["chicken-roll", "paneer-roll", "veg-cutlet", "chicken-cutlet", "new-product"];
+    const variantState = { ...state, transactions: products.map((productId, i) => ({ ...template, productId, businessDate: "2026-10-13", quantity: String(i + 1), revenue: String((i + 1) * 10) })) };
+    const summary = calculatePeriodSummary(variantState, "2026-10-13", "2026-10-13");
+    expect(summary.revenue).toBe("150.00");
+    expect(summary.dailySales[0].productSales).toEqual(Object.fromEntries(products.map((id, i) => [id, { quantity: String(i + 1), revenue: `${(i + 1) * 10}.00` }])));
+    expect(calculatePeriodSummary(variantState, "2026-10-14").dailySales).toEqual([]);
+  });
+
 });

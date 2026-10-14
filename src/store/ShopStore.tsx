@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createDemoState } from "@/domain/seed";
+import { mergeShopProducts } from "@/domain/products";
 import { mergeCustomerAccounts } from "@/domain/customers";
 import { isBusinessDateClosed } from "@/domain/closing";
 import { primaryRatesFromOrder } from "@/domain/operations";
@@ -130,6 +131,7 @@ export function ShopStoreProvider({ children }: { children: ReactNode }) {
           setState({
             ...defaults,
             ...parsed,
+            products: mergeShopProducts(parsed.products),
             lpgPricing: parsed.lpgPricing ?? defaults.lpgPricing,
             lpgRefills: parsed.lpgRefills ?? [],
             staffPayments: parsed.staffPayments ?? defaults.staffPayments,
